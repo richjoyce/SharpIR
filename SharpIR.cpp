@@ -44,14 +44,17 @@
 // Initialisation function
 //  + irPin : is obviously the pin where the IR sensor is attached
 //  + sensorModel is a int to differentiate the two sensor models this library currently supports:
+//    > 430 is the int for the GP2Y0A41SK0F and 
 //    > 1080 is the int for the GP2Y0A21Y and 
 //    > 20150 is the int for GP2Y0A02YK and 
 //    > 100500 is the long for GP2Y0A710K0F
 //    The numbers reflect the distance range they are designed for (in cm)
-SharpIR::SharpIR(int irPin, long sensorModel) {
+//  + aref is the ADC voltage (3330 or 5000 most likely)
+SharpIR::SharpIR(int irPin, long sensorModel, int aref) {
   
     _irPin=irPin;
     _model=sensorModel;
+    _aref=aref;
     
     // Define pin as Input
     pinMode (_irPin, INPUT);
@@ -94,13 +97,33 @@ int SharpIR::distance() {
     sort(ir_val,NB_SAMPLE);
 
     
-    if (_model==1080) {
+    if (_model==215) {
         
         // Different expressions required as the Photon has 12 bit ADCs vs 10 bit for Arduinos
         #ifdef ARDUINO
-          distanceCM = 27.728 * pow(map(ir_val[NB_SAMPLE / 2], 0, 1023, 0, 5000)/1000.0, -1.2045);
+          distanceCM = 12.491 * pow(map(ir_val[NB_SAMPLE / 2], 0, 1023, 0, _aref)/1000.0, -1.117);
         #elif defined(SPARK)
-          distanceCM = 27.728 * pow(map(ir_val[NB_SAMPLE / 2], 0, 4095, 0, 5000)/1000.0, -1.2045);
+          distanceCM = 12.491 * pow(map(ir_val[NB_SAMPLE / 2], 0, 4095, 0, _aref)/1000.0, -1.117);
+        #endif
+          /* trollololol */
+          distanceCM /= 2;
+
+    } else if (_model==430) {
+        
+        // Different expressions required as the Photon has 12 bit ADCs vs 10 bit for Arduinos
+        #ifdef ARDUINO
+          distanceCM = 12.491 * pow(map(ir_val[NB_SAMPLE / 2], 0, 1023, 0, _aref)/1000.0, -1.117);
+        #elif defined(SPARK)
+          distanceCM = 12.491 * pow(map(ir_val[NB_SAMPLE / 2], 0, 4095, 0, _aref)/1000.0, -1.117);
+        #endif
+
+    } else if (_model==1080) {
+        
+        // Different expressions required as the Photon has 12 bit ADCs vs 10 bit for Arduinos
+        #ifdef ARDUINO
+          distanceCM = 27.728 * pow(map(ir_val[NB_SAMPLE / 2], 0, 1023, 0, _aref)/1000.0, -1.2045);
+        #elif defined(SPARK)
+          distanceCM = 27.728 * pow(map(ir_val[NB_SAMPLE / 2], 0, 4095, 0, _aref)/1000.0, -1.2045);
         #endif
 
     } else if (_model==20150){
@@ -110,17 +133,17 @@ int SharpIR::distance() {
         
         // Different expressions required as the Photon has 12 bit ADCs vs 10 bit for Arduinos
         #ifdef ARDUINO
-          distanceCM = 60.374 * pow(map(ir_val[NB_SAMPLE / 2], 0, 1023, 0, 5000)/1000.0, -1.16);
+          distanceCM = 60.374 * pow(map(ir_val[NB_SAMPLE / 2], 0, 1023, 0, _aref)/1000.0, -1.16);
         #elif defined(SPARK)
-          distanceCM = 60.374 * pow(map(ir_val[NB_SAMPLE / 2], 0, 4095, 0, 5000)/1000.0, -1.16);
+          distanceCM = 60.374 * pow(map(ir_val[NB_SAMPLE / 2], 0, 4095, 0, _aref)/1000.0, -1.16);
         #endif
 
     } else if (_model==100500){
         
         #ifdef ARDUINO
-          current = map(ir_val[NB_SAMPLE / 2], 0, 1023, 0, 5000);
+          current = map(ir_val[NB_SAMPLE / 2], 0, 1023, 0, _aref);
         #elif defined(SPARK)
-          current = map(ir_val[NB_SAMPLE / 2], 0, 4095, 0, 5000);
+          current = map(ir_val[NB_SAMPLE / 2], 0, 4095, 0, _aref);
         #endif
         // use the inverse number of distance like in the datasheet (1/L)
         // y = mx + b = 137500*x + 1125 

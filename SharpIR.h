@@ -26,7 +26,7 @@ class SharpIR
 {
   public:
 
-    SharpIR (int irPin, long sensorModel);
+    SharpIR (int irPin, long sensorModel, int _aref=5000);
     int distance();
 
   private:
@@ -35,6 +35,7 @@ class SharpIR
     
     int _irPin;
     long _model;
+    int _aref;
 };
 
 #endif
